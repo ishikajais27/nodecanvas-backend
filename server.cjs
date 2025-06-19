@@ -5,7 +5,7 @@ const apiRouter = require('./routes/api.cjs')
 
 const corsOptions = {
   origin: [
-    'https://node-canvas-frontend-p5zt.vercel.app/', // Your Vercel frontend URL
+    'https://node-canvas-frontend-khm9.vercel.app/', // Your Vercel frontend URL
     'http://localhost:3000', // For local development
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
