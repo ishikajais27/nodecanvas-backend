@@ -6,19 +6,35 @@ const cors = require('cors')
 const router = express.Router()
 const dataPath = path.join(__dirname, '../db/data.json')
 
-// Helper function to read data
+// Enhanced logging middleware
+router.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
+  next()
+})
+
+// Helper function to read data with error handling
 const readData = () => {
-  const rawData = fs.readFileSync(dataPath)
-  return JSON.parse(rawData)
+  try {
+    if (!fs.existsSync(dataPath)) {
+      fs.writeFileSync(dataPath, JSON.stringify({ nodes: [], edges: [] }))
+    }
+    const rawData = fs.readFileSync(dataPath, 'utf8')
+    return JSON.parse(rawData)
+  } catch (error) {
+    console.error('Error reading data file:', error)
+    throw new Error('Failed to read data file')
+  }
 }
 
-// Helper function to write data
+// Helper function to write data with error handling
 const writeData = (data) => {
-  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
+  try {
+    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), 'utf8')
+  } catch (error) {
+    console.error('Error writing data file:', error)
+    throw new Error('Failed to write data file')
+  }
 }
-
-// Enable CORS for all routes
-router.use(cors())
 
 // Get all graph data
 router.get('/graph', (req, res) => {
@@ -27,7 +43,10 @@ router.get('/graph', (req, res) => {
     res.json(data)
   } catch (error) {
     console.error('Error reading graph data:', error)
-    res.status(500).json({ error: 'Failed to read graph data' })
+    res.status(500).json({
+      error: 'Failed to read graph data',
+      details: error.message,
+    })
   }
 })
 
@@ -36,8 +55,15 @@ router.post('/nodes', (req, res) => {
   try {
     const data = readData()
     const newNode = {
-      id: req.body.id || `service-${Math.floor(Math.random() * 1000)}`,
+      id:
+        req.body.id ||
+        `service-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: req.body.name || `Service ${Math.floor(Math.random() * 1000)}`,
+      type:
+        req.body.type ||
+        ['backend', 'frontend', 'database', 'gateway'][
+          Math.floor(Math.random() * 4)
+        ],
       latency: req.body.latency || Math.floor(Math.random() * 200),
       errorRate: req.body.errorRate || Math.random().toFixed(2),
       traffic: req.body.traffic || Math.floor(Math.random() * 50),
@@ -50,9 +76,10 @@ router.post('/nodes', (req, res) => {
     res.status(201).json(newNode)
   } catch (error) {
     console.error('Error adding node:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to add node', details: error.message })
+    res.status(500).json({
+      error: 'Failed to add node',
+      details: error.message,
+    })
   }
 })
 
@@ -65,7 +92,10 @@ router.put('/nodes/:id', (req, res) => {
 
     const index = data.nodes.findIndex((node) => node.id === nodeId)
     if (index === -1) {
-      return res.status(404).json({ error: 'Node not found' })
+      return res.status(404).json({
+        error: 'Node not found',
+        nodeId,
+      })
     }
 
     data.nodes[index] = { ...data.nodes[index], ...updatedNode }
@@ -73,9 +103,10 @@ router.put('/nodes/:id', (req, res) => {
     res.json(data.nodes[index])
   } catch (error) {
     console.error('Error updating node:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to update node', details: error.message })
+    res.status(500).json({
+      error: 'Failed to update node',
+      details: error.message,
+    })
   }
 })
 
@@ -85,13 +116,14 @@ router.delete('/nodes/:id', (req, res) => {
     const data = readData()
     const nodeId = req.params.id
 
-    // Check if node exists
     const nodeExists = data.nodes.some((node) => node.id === nodeId)
     if (!nodeExists) {
-      return res.status(404).json({ error: 'Node not found' })
+      return res.status(404).json({
+        error: 'Node not found',
+        nodeId,
+      })
     }
 
-    // Remove node and related edges
     data.nodes = data.nodes.filter((node) => node.id !== nodeId)
     data.edges = data.edges.filter(
       (edge) => edge.source !== nodeId && edge.target !== nodeId
@@ -101,9 +133,10 @@ router.delete('/nodes/:id', (req, res) => {
     res.status(204).send()
   } catch (error) {
     console.error('Error deleting node:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to delete node', details: error.message })
+    res.status(500).json({
+      error: 'Failed to delete node',
+      details: error.message,
+    })
   }
 })
 
@@ -113,38 +146,48 @@ router.post('/edges', (req, res) => {
     const data = readData()
     const newEdge = req.body
 
-    // Check if nodes exist
     const sourceExists = data.nodes.some((node) => node.id === newEdge.source)
     const targetExists = data.nodes.some((node) => node.id === newEdge.target)
 
     if (!sourceExists || !targetExists) {
-      return res
-        .status(400)
-        .json({ error: 'Source or target node does not exist' })
+      return res.status(400).json({
+        error: 'Source or target node does not exist',
+        source: newEdge.source,
+        target: newEdge.target,
+      })
     }
 
-    // Check if edge already exists
     const edgeExists = data.edges.some(
       (edge) => edge.source === newEdge.source && edge.target === newEdge.target
     )
 
     if (edgeExists) {
-      return res.status(400).json({ error: 'Edge already exists' })
+      return res.status(400).json({
+        error: 'Edge already exists',
+        source: newEdge.source,
+        target: newEdge.target,
+      })
     }
 
-    data.edges.push({
+    const edgeWithDefaults = {
       ...newEdge,
+      id:
+        newEdge.id || `edge-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       traffic: newEdge.traffic || Math.floor(Math.random() * 50) + 1,
       protocol: newEdge.protocol || 'HTTP',
-    })
+      errorRate: newEdge.errorRate || Math.random().toFixed(2),
+      rps: newEdge.rps || Math.floor(Math.random() * 1000),
+    }
 
+    data.edges.push(edgeWithDefaults)
     writeData(data)
-    res.status(201).json(newEdge)
+    res.status(201).json(edgeWithDefaults)
   } catch (error) {
     console.error('Error adding edge:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to add edge', details: error.message })
+    res.status(500).json({
+      error: 'Failed to add edge',
+      details: error.message,
+    })
   }
 })
 
@@ -159,7 +202,11 @@ router.delete('/edges', (req, res) => {
     )
 
     if (!edgeExists) {
-      return res.status(404).json({ error: 'Edge not found' })
+      return res.status(404).json({
+        error: 'Edge not found',
+        source,
+        target,
+      })
     }
 
     data.edges = data.edges.filter(
@@ -170,19 +217,24 @@ router.delete('/edges', (req, res) => {
     res.status(204).send()
   } catch (error) {
     console.error('Error deleting edge:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to delete edge', details: error.message })
+    res.status(500).json({
+      error: 'Failed to delete edge',
+      details: error.message,
+    })
   }
 })
-
-// Add these routes before module.exports in api.cjs
 
 // Search nodes by name
 router.get('/nodes/search', (req, res) => {
   try {
     const data = readData()
     const query = req.query.q?.toLowerCase() || ''
+
+    if (!query.trim()) {
+      return res.status(400).json({
+        error: 'Search query is required',
+      })
+    }
 
     const filteredNodes = data.nodes.filter((node) =>
       node.name.toLowerCase().includes(query)
@@ -191,7 +243,10 @@ router.get('/nodes/search', (req, res) => {
     res.json(filteredNodes)
   } catch (error) {
     console.error('Error searching nodes:', error)
-    res.status(500).json({ error: 'Failed to search nodes' })
+    res.status(500).json({
+      error: 'Failed to search nodes',
+      details: error.message,
+    })
   }
 })
 
@@ -201,6 +256,12 @@ router.get('/nodes/filter', (req, res) => {
     const data = readData()
     const type = req.query.type?.toLowerCase() || ''
 
+    if (!type.trim()) {
+      return res.status(400).json({
+        error: 'Type parameter is required',
+      })
+    }
+
     const filteredNodes = data.nodes.filter(
       (node) => node.type?.toLowerCase() === type
     )
@@ -208,7 +269,27 @@ router.get('/nodes/filter', (req, res) => {
     res.json(filteredNodes)
   } catch (error) {
     console.error('Error filtering nodes:', error)
-    res.status(500).json({ error: 'Failed to filter nodes' })
+    res.status(500).json({
+      error: 'Failed to filter nodes',
+      details: error.message,
+    })
+  }
+})
+
+// Health check endpoint
+router.get('/health', (req, res) => {
+  try {
+    readData() // Verify we can read the data file
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    })
+  } catch (error) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error.message,
+    })
   }
 })
 
