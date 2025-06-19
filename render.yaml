@@ -1,0 +1,13 @@
+# backend/render.yaml
+services:
+  - type: web
+    name: nodecanvas-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.cjs
+    env: node
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
