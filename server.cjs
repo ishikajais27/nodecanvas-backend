@@ -3,37 +3,24 @@ const cors = require('cors')
 const path = require('path')
 const apiRouter = require('./routes/api.cjs')
 
+const app = express() // Initialize app first
+const PORT = process.env.PORT || 5000
+
+// CORS configuration
 const corsOptions = {
   origin: [
-    'https://node-canvas-frontend-khm9.vercel.app/', // Your Vercel frontend URL
-    'http://localhost:3000', // For local development
+    'https://node-canvas-frontend-qeje.vercel.app/', // Removed trailing slash
+    'http://localhost:3000',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }
 
-app.use(cors(corsOptions)) // Replace existing cors middleware
-const app = express()
-const PORT = process.env.PORT || 5000
-
+app.use(cors(corsOptions)) // Now app is defined
 app.use(express.json())
 
 // API routes
 app.use('/api', apiRouter)
-
-// Serve static files from frontend in production
-// if (process.env.NODE_ENV === 'production') {
-//   // Resolve the correct path to frontend dist
-//   const frontendPath = path.join(__dirname, '../frontend/dist')
-
-//   // Serve static files
-//   app.use(express.static(frontendPath))
-
-//   // Handle SPA routing - return index.html for all unknown routes
-//   app.get('*', (req, res) => {
-//     res.sendFile(path.join(frontendPath, 'index.html'))
-//   })
-// }
 
 // Start server
 app.listen(PORT, () => {
