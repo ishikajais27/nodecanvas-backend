@@ -15,11 +15,18 @@ const corsOptions = {
 
     const allowedOrigins = [
       'https://node-canvas-frontend-khm9.vercel.app',
+      'https://node-canvas-frontend-yf81-hh7vvst5f-ishikajais27s-projects.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173',
+      // Add any other domains you need to allow
     ]
 
     if (allowedOrigins.includes(origin)) {
+      return callback(null, true)
+    }
+
+    // Also allow subdomains of vercel.app
+    if (origin.endsWith('.vercel.app')) {
       return callback(null, true)
     }
 
