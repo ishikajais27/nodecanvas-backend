@@ -1,0 +1,79 @@
+{
+  "nodes": [
+    {
+      "id": "service-1",
+      "name": "Frontend Service",
+      "latency": 120,
+      "errorRate": 0.5,
+      "traffic": 45,
+      "x": -82.32452830153534,
+      "y": -754.277962722171,
+      "type": "frontend",
+      "version": "1.2.3"
+    },
+    {
+      "id": "service-194",
+      "name": "Service-2",
+      "latency": 126,
+      "errorRate": "0.07",
+      "traffic": 12,
+      "x": 214.6455479086739,
+      "y": -761.6920774487872
+    },
+    {
+      "id": "service-791",
+      "name": "Service-301",
+      "latency": 186,
+      "errorRate": "0.73",
+      "traffic": 47,
+      "x": 101.03404456567887,
+      "y": -561.8425037638765
+    },
+    {
+      "id": "service-503",
+      "name": "Service-976",
+      "latency": 224,
+      "errorRate": "0.20",
+      "traffic": 54,
+      "x": 437.844751405653,
+      "y": -587.4528550984811
+    }
+  ],
+  "edges": [
+    {
+      "source": "service-1",
+      "target": "service-194",
+      "traffic": 10,
+      "protocol": "HTTP",
+      "errorRate": "0.87"
+    },
+    {
+      "source": "service-791",
+      "target": "service-1",
+      "traffic": 10,
+      "protocol": "HTTP",
+      "errorRate": "0.44"
+    },
+    {
+      "source": "service-791",
+      "target": "service-194",
+      "traffic": 10,
+      "protocol": "HTTP",
+      "errorRate": "0.77"
+    },
+    {
+      "source": "service-503",
+      "target": "service-791",
+      "traffic": 10,
+      "protocol": "HTTP",
+      "errorRate": "0.83"
+    },
+    {
+      "source": "service-503",
+      "target": "service-1",
+      "traffic": 10,
+      "protocol": "HTTP",
+      "errorRate": "0.17"
+    }
+  ]
+}
