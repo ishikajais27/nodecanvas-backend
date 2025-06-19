@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5000
 // CORS configuration
 const corsOptions = {
   origin: [
-    'https://node-canvas-frontend-qeje.vercel.app/', // Removed trailing slash
+    'https://node-canvas-frontend-khm9.vercel.app', // Removed trailing slash
     'http://localhost:3000',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
